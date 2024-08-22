@@ -12,7 +12,7 @@ document.getElementById('project-form').addEventListener('submit', async functio
     };
 
     try {
-        const response = await fetch('https://tu-api-vercel.com/api/proyectos', {
+        const response = await fetch('https://natiwords-api.vercel.app/routes/proyectos', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
