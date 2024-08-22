@@ -11,7 +11,7 @@ const app = express();
 app.use(express.json());
 
 const proyectosRoute = require('./routes/proyectos');
-app.use('/api/proyectos', proyectosRoute);
+app.use('/routes/proyectos', proyectosRoute);
 
 // Conexión a MongoDB
 mongoose.connect(process.env.MONGO_URI, {
