@@ -7,8 +7,8 @@ const cors = require('cors'); // Importa cors
 
 dotenv.config();
 
-app.use(cors()); // Habilita CORS para todas las rutas
 const app = express();
+app.use(cors()); // Habilita CORS para todas las rutas
 app.use(express.json());
 
 const proyectosRoute = require('./routes/proyectos');
