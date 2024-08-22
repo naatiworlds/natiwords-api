@@ -24,6 +24,7 @@ mongoose.connect(process.env.MONGO_URI, {
 app.get('/', (req, res) => {
     res.send('API está funcionando');
 });
+const proyectosRoute = require('./routes/auth');
 
 app.use('/api/auth', authRoutes);
 
