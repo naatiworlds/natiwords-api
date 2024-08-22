@@ -3,10 +3,11 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
 const auth = require('./middleware/auth');
-
+const cors = require('cors'); // Importa cors
 
 dotenv.config();
 
+app.use(cors()); // Habilita CORS para todas las rutas
 const app = express();
 app.use(express.json());
 
