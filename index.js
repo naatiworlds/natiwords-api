@@ -12,7 +12,7 @@ app.use(cors()); // Habilita CORS para todas las rutas
 app.use(express.json());
 
 const proyectosRoute = require('./routes/proyectos');
-app.use('/routes/proyectos', proyectosRoute);
+app.use('/api/proyectos', proyectosRoute);
 
 // Conexión a MongoDB
 mongoose.connect(process.env.MONGO_URI, {
