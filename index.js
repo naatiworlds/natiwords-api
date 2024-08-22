@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
+const proyectosRoute = require('./routes/proyectos');
+
 const auth = require('./middleware/auth');
 const cors = require('cors'); // Importa cors
 
@@ -11,8 +13,6 @@ const app = express();
 app.use(cors()); // Habilita CORS para todas las rutas
 app.use(express.json());
 
-const proyectosRoute = require('./routes/proyectos');
-app.use('/api/proyectos', proyectosRoute);
 
 // Conexión a MongoDB
 mongoose.connect(process.env.MONGO_URI, {
@@ -24,7 +24,8 @@ mongoose.connect(process.env.MONGO_URI, {
 app.get('/', (req, res) => {
     res.send('API está funcionando');
 });
-const proyectosRoute = require('./routes/auth');
+
+app.use('/api/proyectos', proyectosRoute);
 
 app.use('/api/auth', authRoutes);
 
