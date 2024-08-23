@@ -1,38 +1,116 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const authRoutes = require('./routes/auth');
-const proyectosRoute = require('./routes/proyectos');
-
-const auth = require('./middleware/auth');
-const cors = require('cors'); // Importa cors
-
-dotenv.config();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const app = express();
-app.use(cors()); // Habilita CORS para todas las rutas
+app.use(bodyParser.json());
 app.use(express.json());
 
+app.use(cors());
 
-// // Conexión a MongoDB
-// mongoose.connect(process.env.MONGO_URI, {
-//     useNewUrlParser: true,
-//     useUnifiedTopology: true
-// }).then(() => console.log("MongoDB conectado"))
-// .catch(err => console.error(err));
-
-app.get('/', (req, res) => {
-    res.send('API está funcionando');
+// Configura la conexión a MongoDB
+mongoose.connect('mongodb://localhost:27017/my-portfolio', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
 });
 
-app.use('/api/proyectos', proyectosRoute);
-
-app.use('/api/auth', authRoutes);
-
-// Ruta protegida para añadir datos
-app.post('/api/data', auth, (req, res) => {
-    const data = req.body.data; // manejar los datos que quieres guardar
-    res.json({ message: 'Datos recibidos', data });
+// Define el esquema y modelo para los proyectos
+const projectSchema = new mongoose.Schema({
+    name: String,
+    description: String,
+    technologies: [String],
+    url: String,
 });
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));
+
+const Project = mongoose.model('Project', projectSchema);
+
+// Esquema y modelo para el usuario (administrador)
+const userSchema = new mongoose.Schema({
+    username: String,
+    password: String,
+});
+
+const User = mongoose.model('User', userSchema);
+
+// Ruta para registrar un nuevo usuario (solo para desarrollo)
+// app.post('/register', async (req, res) => {
+//     console.log(req.body); // Verifica qué datos están llegando
+
+//     const { username, password } = req.body;
+
+//     if (!username || !password) {
+//         return res.status(400).json({ error: 'El nombre de usuario y la contraseña son requeridos' });
+//     }
+
+//     try {
+//         const hashedPassword = await bcrypt.hash(password, 10);
+
+//         const user = new User({ username, password: hashedPassword });
+//         await user.save();
+
+//         res.json({ message: 'Usuario registrado!' });
+//     } catch (error) {
+//         res.status(500).json({ error: 'Error al registrar el usuario' });
+//     }
+// });
+
+
+
+// Ruta de inicio de sesión para obtener un token
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    const user = await User.findOne({ username });
+    if (!user) {
+        return res.status(400).json({ error: 'Usuario no encontrado' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+        return res.status(400).json({ error: 'Contraseña incorrecta' });
+    }
+
+    const token = jwt.sign({ userId: user._id }, 'secret_key', { expiresIn: '1h' });
+    res.json({ token });
+});
+
+// Middleware de autenticación
+const authenticate = (req, res, next) => {
+    const token = req.header('Authorization').replace('Bearer ', '');
+
+    if (!token) {
+        return res.status(401).json({ error: 'Acceso denegado' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, 'secret_key');
+        req.user = decoded;
+        next();
+    } catch (err) {
+        res.status(401).json({ error: 'Token inválido' });
+    }
+};
+
+// Ruta para agregar un proyecto (autenticado)
+app.post('/projects', authenticate, async (req, res) => {
+    const { name, description, technologies, url } = req.body;
+
+    const project = new Project({ name, description, technologies, url });
+    await project.save();
+
+    res.json({ message: 'Proyecto agregado!' });
+});
+
+// Ruta para obtener todos los proyectos
+app.get('/projects', async (req, res) => {
+    const projects = await Project.find();
+    res.json(projects);
+});
+
+// Iniciar el servidor
+app.listen(3000, () => {
+    console.log('Servidor corriendo en http://localhost:3000');
+});
