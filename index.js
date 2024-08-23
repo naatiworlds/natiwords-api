@@ -12,10 +12,8 @@ app.use(express.json());
 app.use(cors());
 
 // Configura la conexión a MongoDB
-mongoose.connect('mongodb://localhost:27017/my-portfolio', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-});
+mongoose.connect(process.env.MONGODB_URI);
+
 
 // Define el esquema y modelo para los proyectos
 const projectSchema = new mongoose.Schema({
