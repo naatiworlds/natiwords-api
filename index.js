@@ -40,103 +40,92 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-app.get('/test-mongodb', async (req, res) => {
+// Ruta para registrar un nuevo usuario (solo para desarrollo)
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ error: 'El nombre de usuario y la contraseña son requeridos' });
+    }
+
     try {
-        const count = await Project.countDocuments();
-        res.json({ count });
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = new User({ username, password: hashedPassword });
+        await user.save();
+
+        res.json({ message: 'Usuario registrado!' });
     } catch (error) {
-        console.error('Error al contar documentos:', error);
-        res.status(500).json({ error: 'Error al contar documentos' });
+        res.status(500).json({ error: 'Error al registrar el usuario' });
     }
 });
 
+// Ruta de inicio de sesión para obtener un token
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
 
-// // Ruta para registrar un nuevo usuario (solo para desarrollo)
-// app.post('/register', async (req, res) => {
-//     const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user) {
+        return res.status(400).json({ error: 'Usuario no encontrado' });
+    }
 
-//     if (!username || !password) {
-//         return res.status(400).json({ error: 'El nombre de usuario y la contraseña son requeridos' });
-//     }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+        return res.status(400).json({ error: 'Contraseña incorrecta' });
+    }
 
-//     try {
-//         const hashedPassword = await bcrypt.hash(password, 10);
+    const token = jwt.sign({ userId: user._id }, 'secret_key', { expiresIn: '1h' });
+    res.json({ token });
+});
 
-//         const user = new User({ username, password: hashedPassword });
-//         await user.save();
+// Middleware de autenticación
+const authenticate = (req, res, next) => {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
-//         res.json({ message: 'Usuario registrado!' });
-//     } catch (error) {
-//         res.status(500).json({ error: 'Error al registrar el usuario' });
-//     }
-// });
+    if (!token) {
+        return res.status(401).json({ error: 'Acceso denegado' });
+    }
 
-// // Ruta de inicio de sesión para obtener un token
-// app.post('/login', async (req, res) => {
-//     const { username, password } = req.body;
+    try {
+        const decoded = jwt.verify(token, 'secret_key');
+        req.user = decoded;
+        next();
+    } catch (err) {
+        res.status(401).json({ error: 'Token inválido' });
+    }
+};
 
-//     const user = await User.findOne({ username });
-//     if (!user) {
-//         return res.status(400).json({ error: 'Usuario no encontrado' });
-//     }
+// Ruta para agregar un proyecto (autenticado)
+app.post('/projects', authenticate, async (req, res) => {
+    const { name, description, technologies, url } = req.body;
 
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) {
-//         return res.status(400).json({ error: 'Contraseña incorrecta' });
-//     }
+    if (!name || !description || !technologies || !url) {
+        return res.status(400).json({ error: 'Todos los campos son requeridos' });
+    }
 
-//     const token = jwt.sign({ userId: user._id }, 'secret_key', { expiresIn: '1h' });
-//     res.json({ token });
-// });
+    try {
+        const project = new Project({ name, description, technologies, url });
+        await project.save();
 
-// // Middleware de autenticación
-// const authenticate = (req, res, next) => {
-//     const token = req.header('Authorization')?.replace('Bearer ', '');
+        res.json({ message: 'Proyecto agregado!' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al agregar el proyecto' });
+    }
+});
 
-//     if (!token) {
-//         return res.status(401).json({ error: 'Acceso denegado' });
-//     }
-
-//     try {
-//         const decoded = jwt.verify(token, 'secret_key');
-//         req.user = decoded;
-//         next();
-//     } catch (err) {
-//         res.status(401).json({ error: 'Token inválido' });
-//     }
-// };
-
-// // Ruta para agregar un proyecto (autenticado)
-// app.post('/projects', authenticate, async (req, res) => {
-//     const { name, description, technologies, url } = req.body;
-
-//     if (!name || !description || !technologies || !url) {
-//         return res.status(400).json({ error: 'Todos los campos son requeridos' });
-//     }
-
-//     try {
-//         const project = new Project({ name, description, technologies, url });
-//         await project.save();
-
-//         res.json({ message: 'Proyecto agregado!' });
-//     } catch (error) {
-//         res.status(500).json({ error: 'Error al agregar el proyecto' });
-//     }
-// });
-
-// // Ruta para obtener todos los proyectos
-// app.get('/projects', async (req, res) => {
-//     try {
-//         const { page = 1, limit = 10 } = req.query; // Parámetros de consulta para paginación
-//         const projects = await Project.find()
-//             .skip((page - 1) * limit)
-//             .limit(Number(limit));
-//         res.json(projects);
-//     } catch (error) {
-//         console.error('Error al obtener proyectos:', error);
-//         res.status(500).json({ error: 'Error al obtener proyectos' });
-//     }
-// });
+// Ruta para obtener todos los proyectos
+app.get('/projects', async (req, res) => {
+    try {
+        const { page = 1, limit = 10 } = req.query; // Parámetros de consulta para paginación
+        const projects = await Project.find()
+            .skip((page - 1) * limit)
+            .limit(Number(limit));
+        res.json(projects);
+    } catch (error) {
+        console.error('Error al obtener proyectos:', error);
+        res.status(500).json({ error: 'Error al obtener proyectos' });
+    }
+});
 
 // Iniciar el servidor
 const PORT = process.env.PORT || 3000;
