@@ -1,3 +1,4 @@
+require('dotenv').config(); // Cargar las variables del archivo .env
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -108,10 +109,6 @@ app.get('/projects', async (req, res) => {
     res.json(projects);
 });
 
-app.get('/', async (req, res) => {
-    const projects = await Project.find();
-    res.json("Hola");
-});
 
 // Iniciar el servidor
 app.listen(3000, () => {
