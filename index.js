@@ -13,8 +13,14 @@ app.use(express.json());
 app.use(cors());
 
 // Configura la conexión a MongoDB
-mongoose.connect(process.env.MONGODB_URI);
-
+mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }).then(() => {
+    console.log('Conectado a MongoDB');
+  }).catch(err => {
+    console.error('Error al conectar a MongoDB:', err);
+  });
 
 // Define el esquema y modelo para los proyectos
 const projectSchema = new mongoose.Schema({
