@@ -40,27 +40,27 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-// Ruta para registrar un nuevo usuario (solo para desarrollo)
-// app.post('/register', async (req, res) => {
-//     console.log(req.body); // Verifica qué datos están llegando
+//Ruta para registrar un nuevo usuario (solo para desarrollo)
+app.post('/register', async (req, res) => {
+    console.log(req.body); // Verifica qué datos están llegando
 
-//     const { username, password } = req.body;
+    const { username, password } = req.body;
 
-//     if (!username || !password) {
-//         return res.status(400).json({ error: 'El nombre de usuario y la contraseña son requeridos' });
-//     }
+    if (!username || !password) {
+        return res.status(400).json({ error: 'El nombre de usuario y la contraseña son requeridos' });
+    }
 
-//     try {
-//         const hashedPassword = await bcrypt.hash(password, 10);
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-//         const user = new User({ username, password: hashedPassword });
-//         await user.save();
+        const user = new User({ username, password: hashedPassword });
+        await user.save();
 
-//         res.json({ message: 'Usuario registrado!' });
-//     } catch (error) {
-//         res.status(500).json({ error: 'Error al registrar el usuario' });
-//     }
-// });
+        res.json({ message: 'Usuario registrado!' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al registrar el usuario' });
+    }
+});
 
 
 
@@ -111,9 +111,13 @@ app.post('/projects', authenticate, async (req, res) => {
 
 // Ruta para obtener todos los proyectos
 app.get('/projects', async (req, res) => {
-    const projects = await Project.find();
-    res.json(projects);
-});
+    try {
+      const projects = await Project.find(); // Reemplaza con tu consulta real
+      res.json(projects);
+    } catch (error) {
+      res.status(500).json({ error: 'Error al obtener proyectos' });
+    }
+  });
 
 
 // Iniciar el servidor
