@@ -13,14 +13,17 @@ app.use(express.json());
 app.use(cors());
 
 // Configura la conexión a MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  }).then(() => {
-    console.log('Conectado a MongoDB');
-  }).catch(err => {
-    console.error('Error al conectar a MongoDB:', err);
-  });
+const connectToDatabase = async () => {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      console.log('Conectado a MongoDB');
+    } catch (error) {
+      console.error('Error al conectar a MongoDB:', error);
+    }
+  };
 
 // Define el esquema y modelo para los proyectos
 const projectSchema = new mongoose.Schema({
@@ -112,9 +115,12 @@ app.post('/projects', authenticate, async (req, res) => {
 // Ruta para obtener todos los proyectos
 app.get('/projects', async (req, res) => {
     try {
-      const projects = await Project.find(); // Reemplaza con tu consulta real
+      console.log('Received request for /projects');
+      const projects = await Project.find(); // Asegúrate de reemplazar con tu modelo real
+      console.log('Projects retrieved:', projects);
       res.json(projects);
     } catch (error) {
+      console.error('Error retrieving projects:', error);
       res.status(500).json({ error: 'Error al obtener proyectos' });
     }
   });
@@ -124,3 +130,4 @@ app.get('/projects', async (req, res) => {
 app.listen(3000, () => {
     console.log('Servidor corriendo en http://localhost:3000');
 });
+connectToDatabase();
