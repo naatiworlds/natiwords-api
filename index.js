@@ -7,40 +7,41 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
+
+// Middleware
+app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
 
-app.use(cors());
-
 // Configura la conexión a MongoDB
-mongoose.connect(process.env.MONGODB_URI).then(() => {
+mongoose.connect(process.env.MONGODB_URI)
+.then(() => {
     console.log('Conectado a MongoDB');
-  }).catch(err => {
+})
+.catch(err => {
     console.error('Error al conectar a MongoDB:', err);
-  });
+});
 
 // Define el esquema y modelo para los proyectos
 const projectSchema = new mongoose.Schema({
-    name: String,
-    description: String,
-    technologies: [String],
-    url: String,
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+    technologies: { type: [String], required: true },
+    url: { type: String, required: true },
 });
 
 const Project = mongoose.model('Project', projectSchema);
 
 // Esquema y modelo para el usuario (administrador)
 const userSchema = new mongoose.Schema({
-    username: String,
-    password: String,
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
 });
 
 const User = mongoose.model('User', userSchema);
 
-//Ruta para registrar un nuevo usuario (solo para desarrollo)
+// Ruta para registrar un nuevo usuario (solo para desarrollo)
 app.post('/register', async (req, res) => {
-    console.log(req.body); // Verifica qué datos están llegando
-
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -58,8 +59,6 @@ app.post('/register', async (req, res) => {
         res.status(500).json({ error: 'Error al registrar el usuario' });
     }
 });
-
-
 
 // Ruta de inicio de sesión para obtener un token
 app.post('/login', async (req, res) => {
@@ -81,7 +80,7 @@ app.post('/login', async (req, res) => {
 
 // Middleware de autenticación
 const authenticate = (req, res, next) => {
-    const token = req.header('Authorization').replace('Bearer ', '');
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
         return res.status(401).json({ error: 'Acceso denegado' });
@@ -100,28 +99,36 @@ const authenticate = (req, res, next) => {
 app.post('/projects', authenticate, async (req, res) => {
     const { name, description, technologies, url } = req.body;
 
-    const project = new Project({ name, description, technologies, url });
-    await project.save();
+    if (!name || !description || !technologies || !url) {
+        return res.status(400).json({ error: 'Todos los campos son requeridos' });
+    }
 
-    res.json({ message: 'Proyecto agregado!' });
+    try {
+        const project = new Project({ name, description, technologies, url });
+        await project.save();
+
+        res.json({ message: 'Proyecto agregado!' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al agregar el proyecto' });
+    }
 });
 
 // Ruta para obtener todos los proyectos
 app.get('/projects', async (req, res) => {
     try {
-      const { page = 1, limit = 10 } = req.query; // Parámetros de consulta para paginación
-      const projects = await Project.find()
-        .skip((page - 1) * limit)
-        .limit(Number(limit));
-      res.json(projects);
+        const { page = 1, limit = 10 } = req.query; // Parámetros de consulta para paginación
+        const projects = await Project.find()
+            .skip((page - 1) * limit)
+            .limit(Number(limit));
+        res.json(projects);
     } catch (error) {
-      console.error('Error al obtener proyectos:', error);
-      res.status(500).json({ error: 'Error al obtener proyectos' });
+        console.error('Error al obtener proyectos:', error);
+        res.status(500).json({ error: 'Error al obtener proyectos' });
     }
-  });
-
+});
 
 // Iniciar el servidor
-app.listen(3000, () => {
-    console.log('Servidor corriendo en http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
