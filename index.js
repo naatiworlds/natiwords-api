@@ -7,7 +7,14 @@ const connectDB = require('./config/db');
 const app = express();
 
 // Middleware
-app.use(cors());
+const corsOptions = {
+    origin: 'https://ciendias-web.onrender.com', // Origen permitido
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Métodos permitidos
+    allowedHeaders: 'Content-Type, Authorization', // Encabezados permitidos
+    credentials: true // Permitir el uso de cookies y autenticación
+  };
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(express.json());
 

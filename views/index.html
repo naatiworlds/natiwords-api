@@ -34,7 +34,7 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            fetch('https://natiwords-api.onrender.com/login', {
+            fetch('https://natiwords-api.onrender.com/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
@@ -57,7 +57,7 @@
             const technologies = document.getElementById('technologies').value.split(',');
             const url = document.getElementById('url').value;
 
-            fetch('https://natiwords-api.onrender.com/projects', {
+            fetch('https://natiwords-api.onrender.com/api/projects', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
